@@ -1,0 +1,414 @@
+---
+title: "Sales"
+author: "Keerthi Tippanaboina"
+date: "19/07/2023"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+    fig_height: 8
+  html_document:
+    code_folding: none
+    df_print: paged
+    highlight: tango
+    number_sections: yes
+    theme: flatly
+    toc: yes
+    toc_depth: 2
+    
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE,
+    eval = TRUE,
+    message = FALSE,
+    warning = FALSE,
+    dpi = 300,
+    fig.align = "center"
+    )
+```
+
+```{r, echo=FALSE}
+library(tidyverse)
+library(lubridate)
+library(plotly)
+interactive = FALSE
+
+# Bike data
+bikes_tbl      <- readRDS("bikes_tbl.rds")
+bikeshops_tbl  <- readRDS("bikeshops_tbl.rds")
+orderlines_tbl <- readRDS("orderlines_tbl.rds")
+
+bike_orderlines_tbl <- orderlines_tbl %>%
+    left_join(bikes_tbl,     by = c("product_id" = "bike_id")) %>%
+    left_join(bikeshops_tbl, by = c("customer_id" = "bikeshop_id")) %>%
+    mutate(total_price = price_euro * quantity)
+
+bike_orderlines_tbl
+
+format_to_euro <- function(x, suffix = " €") {
+  
+  scales::dollar(x,
+                 suffix       = suffix,
+                 prefix       = "",
+                 big.mark     = ".",
+                 decimal.mark = ",")
+}
+
+euro_format <- function(scale        = 1,
+                        prefix       = "",
+                        suffix       = " €",
+                        big.mark     = ".",
+                        decimal.mark = ",") {
+  
+  scales::dollar_format(suffix       = suffix,
+                        prefix       = prefix,
+                        big.mark     = big.mark,
+                        decimal.mark = decimal.mark,
+                        scale        = scale)
+  
+}
+```
+
+## Quarterly Sales Trends
+
+```{r, echo=FALSE}
+#quarterly sales
+
+total_sales_q_tbl <- bike_orderlines_tbl %>%
+  
+  select(order_date, total_price) %>%
+  
+  mutate(date_rounded = floor_date(order_date, unit = "quarter")) %>%
+  
+  group_by(date_rounded) %>%
+  summarise(total_sales = sum(total_price)) %>%
+  ungroup() %>%
+  
+  mutate(label_text = str_glue("Sales: {format_to_euro(total_sales)}
+                                 Date: {date_rounded %>% format('%B %Y')}"))
+
+#static plot
+
+sales_q <- total_sales_q_tbl %>%
+  ggplot(aes(x = date_rounded, y = total_sales)) +
+  
+  
+  geom_point() +
+  geom_smooth(method = "loess", span = 0.2) +
+  scale_y_continuous(labels = euro_format()) +
+  expand_limits(y = 0) +
+  
+  labs(
+    title = "Total Sales",
+    y = "Revenue (EUR)",
+    x = ""
+  )
+if (interactive) {
+    return(ggplotly(sales_q, tooltip = "text"))
+  } else {
+    return(sales_q)
+  }
+```
+## Monthly Sales Trends
+```{r, echo=FALSE}
+
+
+total_sales_m_tbl <- bike_orderlines_tbl %>%
+  
+  select(order_date, total_price) %>%
+  
+  mutate(date_rounded = floor_date(order_date, unit = "month")) %>%
+  
+  group_by(date_rounded) %>%
+  summarise(total_sales = sum(total_price)) %>%
+  ungroup() %>%
+  
+  mutate(label_text = str_glue("Sales: {format_to_euro(total_sales)}
+                                 Date: {date_rounded %>% format('%B %Y')}"))
+
+
+
+sales_m <- total_sales_m_tbl %>%
+  ggplot(aes(x = date_rounded, y = total_sales)) +
+  
+
+  geom_point() +
+  geom_smooth(method = "loess", span = 0.2) +
+  scale_y_continuous(labels = euro_format()) +
+  expand_limits(y = 0) +
+  
+  labs(
+    title = "Total Sales",
+    y = "Revenue (EUR)",
+    x = ""
+  )
+
+if (interactive) {
+    return(ggplotly(sales_m, tooltip = "text"))
+  } else {
+    return(sales_m)
+  }
+```
+
+## Weekly Sales Trends
+
+```{r, echo=FALSE}
+
+
+total_sales_w_tbl <- bike_orderlines_tbl %>%
+  
+  select(order_date, total_price) %>%
+  
+  mutate(date_rounded = floor_date(order_date, unit = "week")) %>%
+  
+  group_by(date_rounded) %>%
+  summarise(total_sales = sum(total_price)) %>%
+  ungroup() %>%
+  
+  mutate(label_text = str_glue("Sales: {format_to_euro(total_sales)}
+                                 Date: {date_rounded %>% format('%B %Y')}"))
+
+sales_w <- total_sales_w_tbl %>%
+  ggplot(aes(x = date_rounded, y = total_sales)) +
+  geom_point() +
+  geom_smooth(method = "loess", span = 0.2) +
+  scale_y_continuous(labels = euro_format()) +
+  expand_limits(y = 0) +
+  
+  labs(
+    title = "Total Sales",
+    y = "Revenue (EUR)",
+    x = ""
+  )
+if (interactive) {
+    return(ggplotly(sales_w, tooltip = "text"))
+  } else {
+    return(sales_w)
+  }
+```
+
+# Category Sales Charts {.tabset .tabset-fade .tabset-pills}
+
+## Road {.tabset .tabset-fade .tabset-pills}
+```{r, echo=FALSE}
+roadbikes_orderlines_tbl <- bike_orderlines_tbl %>%
+  filter(category_1 == "Road")
+```
+### Quarterly
+```{r, echo=FALSE}
+road_category_2_sales_q_tbl <- roadbikes_orderlines_tbl %>%
+  select(order_date, category_1, category_2, total_price) %>%
+  mutate(date_rounded = floor_date(order_date, unit = "quarter")) %>%
+
+  group_by(date_rounded, category_1, category_2) %>%
+  summarise(total_sales = sum(total_price)) %>%
+  ungroup() %>%
+
+  mutate(label_text = str_glue("Sales: {format_to_euro(total_sales)}
+                                 Date: {date_rounded %>% format('%B %Y')}")) %>%
+
+  mutate(category_2 = as_factor(category_2) %>%
+           fct_reorder2(date_rounded, total_sales))
+roadsales_q <- road_category_2_sales_q_tbl %>%
+  ggplot(aes(x = date_rounded, y = total_sales, color = category_2)) +
+  geom_point(colour = "black", aes(text = label_text)) +
+  theme(panel.spacing = unit(3, "lines")) +
+  geom_smooth(method = "loess", span = 0.2) +
+  facet_wrap(~ category_2, scales = "free_y", ncol = 1) +
+  expand_limits(y = 0) +
+  theme(legend.position = "none",
+        # Change the height so the text looks less squished
+        strip.text.x = element_text(margin = margin(5, 5, 5, 5, unit = "pt"))) +
+  scale_y_continuous(labels = euro_format(scale = 1e-3, suffix = "K €")) +
+  labs(
+    title = "Sales By Category 2",
+    y = "", x = ""
+  )
+if (interactive) {
+    return(ggplotly(roadsales_q, tooltip = "text"))
+  } else {
+    return(roadsales_q)
+  }
+```
+### Monthly
+
+```{r, echo=FALSE}
+road_category_2_sales_m_tbl <- roadbikes_orderlines_tbl %>%
+  select(order_date, category_1, category_2, total_price) %>%
+  mutate(date_rounded = floor_date(order_date, unit = "month")) %>%
+
+  group_by(date_rounded, category_1, category_2) %>%
+  summarise(total_sales = sum(total_price)) %>%
+  ungroup() %>%
+
+  mutate(label_text = str_glue("Sales: {format_to_euro(total_sales)}
+                                 Date: {date_rounded %>% format('%B %Y')}")) %>%
+
+  mutate(category_2 = as_factor(category_2) %>%
+           fct_reorder2(date_rounded, total_sales))
+
+roadsales_m <- road_category_2_sales_m_tbl %>%
+  ggplot(aes(x = date_rounded, y = total_sales, color = category_2)) +
+  geom_point(colour = "black", aes(text = label_text)) +
+  theme(panel.spacing = unit(3, "lines")) +
+  geom_smooth(method = "loess", span = 0.2) +
+  facet_wrap(~ category_2, scales = "free_y", ncol = 1) +
+  expand_limits(y = 0) +
+  theme(legend.position = "none",
+        # Change the height so the text looks less squished
+        strip.text.x = element_text(margin = margin(5, 5, 5, 5, unit = "pt"))) +
+  scale_y_continuous(labels = euro_format(scale = 1e-3, suffix = "K €")) +
+  labs(
+    title = "Sales By Category 2",
+    y = "", x = ""
+  )
+if (interactive) {
+    return(ggplotly(roadsales_m, tooltip = "text"))
+  } else {
+    return(roadsales_m)
+  }
+```
+### Weekly
+```{r, echo=FALSE}
+road_category_2_sales_w_tbl <- roadbikes_orderlines_tbl %>%
+  select(order_date, category_1, category_2, total_price) %>%
+  mutate(date_rounded = floor_date(order_date, unit = "week")) %>%
+
+  group_by(date_rounded, category_1, category_2) %>%
+  summarise(total_sales = sum(total_price)) %>%
+  ungroup() %>%
+
+  mutate(label_text = str_glue("Sales: {format_to_euro(total_sales)}
+                                 Date: {date_rounded %>% format('%B %Y')}")) %>%
+
+  mutate(category_2 = as_factor(category_2) %>%
+           fct_reorder2(date_rounded, total_sales))
+
+roadsales_w <- road_category_2_sales_w_tbl %>%
+  ggplot(aes(x = date_rounded, y = total_sales, color = category_2)) +
+  geom_point(colour = "black", aes(text = label_text)) +
+  theme(panel.spacing = unit(3, "lines")) +
+  geom_smooth(method = "loess", span = 0.2) +
+  facet_wrap(~ category_2, scales = "free_y", ncol = 1) +
+  expand_limits(y = 0) +
+  theme(legend.position = "none",
+        strip.text.x = element_text(margin = margin(4,4,4,4, unit = "pt"))) +
+  scale_y_continuous(labels = euro_format(scale = 1e-3, suffix = "K €")) +
+  labs(
+    title = "Sales By Category 2",
+    y = "", x = ""
+  )
+if (interactive) {
+    return(ggplotly(roadsales_w, tooltip = "text"))
+  } else {
+    return(roadsales_w)
+  }
+```
+## Mountain {.tabset .tabset-fade .tabset-pills}
+```{r, echo=FALSE}
+mtbikes_orderlines_tbl <- bike_orderlines_tbl %>%
+  filter(category_1 == "Mountain")
+```
+### Quarterly
+```{r, echo=FALSE}
+mt_category_2_sales_q_tbl <- mtbikes_orderlines_tbl %>%
+  select(order_date, category_1, category_2, total_price) %>%
+  mutate(date_rounded = floor_date(order_date, unit = "quarter")) %>%
+
+  group_by(date_rounded, category_1, category_2) %>%
+  summarise(total_sales = sum(total_price)) %>%
+  ungroup() %>%
+
+  mutate(label_text = str_glue("Sales: {format_to_euro(total_sales)}
+                                 Date: {date_rounded %>% format('%B %Y')}")) %>%
+
+  mutate(category_2 = as_factor(category_2) %>%
+           fct_reorder2(date_rounded, total_sales))
+
+mtsales_q <- mt_category_2_sales_q_tbl %>%
+  ggplot(aes(x = date_rounded, y = total_sales, color = category_2)) +
+  geom_point(colour = "black", aes(text = label_text)) +
+  theme(panel.spacing = unit(2, "lines")) +
+  geom_smooth(method = "loess", span = 0.2) +
+  facet_wrap(~ category_2, scales = "free_y", ncol = 1) +
+  expand_limits(y = 0) +
+  theme(legend.position = "none",
+        strip.text.x = element_text(margin = margin(4,4,4,4, unit = "pt"))) +
+  scale_y_continuous(labels = euro_format(scale = 1e-3, suffix = "K €")) +
+  labs(
+    title = "Sales By Category 2",
+    y = "", x = ""
+  )
+if (interactive) {
+    return(ggplotly(mtsales_q, tooltip = "text"))
+  } else {
+    return(mtsales_q)
+  }
+```
+### Monthly
+```{r, echo=FALSE}
+mt_category_2_sales_m_tbl <- mtbikes_orderlines_tbl %>%
+  select(order_date, category_1, category_2, total_price) %>%
+  mutate(date_rounded = floor_date(order_date, unit = "month")) %>%
+  group_by(date_rounded, category_1, category_2) %>%
+  summarise(total_sales = sum(total_price)) %>%
+  ungroup() %>%
+  mutate(label_text = str_glue("Sales: {format_to_euro(total_sales)}
+                                 Date: {date_rounded %>% format('%B %Y')}")) %>%
+  mutate(category_2 = as_factor(category_2) %>%
+           fct_reorder2(date_rounded, total_sales))
+mtsales_m <- mt_category_2_sales_m_tbl %>%
+  ggplot(aes(x = date_rounded, y = total_sales, color = category_2)) +
+  geom_point(colour = "black", aes(text = label_text)) +
+  theme(panel.spacing = unit(2, "lines")) +
+  geom_smooth(method = "loess", span = 0.2) +
+  facet_wrap(~ category_2, scales = "free_y", ncol = 1) +
+  expand_limits(y = 0) +
+  theme(legend.position = "none",
+        strip.text.x = element_text(margin = margin(4,4,4,4, unit = "pt"))) +
+  scale_y_continuous(labels = euro_format(scale = 1e-3, suffix = "K €")) +
+  labs(
+    title = "Sales By Category 2",
+    y = "", x = ""
+  )
+if (interactive) {
+    return(ggplotly(mtsales_m, tooltip = "text"))
+  } else {
+    return(mtsales_m)
+  }
+```
+### Weekly
+
+```{r, echo=FALSE}
+mt_category_2_sales_w_tbl <- mtbikes_orderlines_tbl %>%
+  select(order_date, category_1, category_2, total_price) %>%
+  mutate(date_rounded = floor_date(order_date, unit = "week")) %>%
+  group_by(date_rounded, category_1, category_2) %>%
+  summarise(total_sales = sum(total_price)) %>%
+  ungroup() %>%
+  mutate(label_text = str_glue("Sales: {format_to_euro(total_sales)}
+                                 Date: {date_rounded %>% format('%B %Y')}")) %>%
+  mutate(category_2 = as_factor(category_2) %>%
+           fct_reorder2(date_rounded, total_sales))
+mtsales_w <- mt_category_2_sales_w_tbl %>%
+  ggplot(aes(x = date_rounded, y = total_sales, color = category_2)) +
+  geom_point(colour = "black", aes(text = label_text)) +
+  theme(panel.spacing = unit(2, "lines")) +
+  geom_smooth(method = "loess", span = 0.2) +
+  facet_wrap(~ category_2, scales = "free_y", ncol = 1) +
+  expand_limits(y = 0) +
+  theme(legend.position = "none",
+        strip.text.x = element_text(margin = margin(4,4,4,4, unit = "pt"))) +
+  scale_y_continuous(labels = euro_format(scale = 1e-3, suffix = "K €")) +
+  labs(
+    title = "Sales By Category 2",
+    y = "", x = ""
+  )
+if (interactive) {
+    return(ggplotly(mtsales_w, tooltip = "text"))
+  } else {
+    return(mtsales_w)
+  }
+```
