@@ -61,5 +61,47 @@
     "title": "My Lab Journal",
     "section": "How to use",
     "text": "How to use\n\nAccept the assignment and get your own github repo.\nBlog/journal what you are doing in R, by editing the .qmd files.\nSee the links page for lots of helpful links on learning R.\nChange everything to make it your own.\nMake sure to render you website everytime before you want to upload changes"
+  },
+  {
+    "objectID": "Task1.html",
+    "href": "Task1.html",
+    "title": "Sales",
+    "section": "",
+    "text": "# A tibble: 15,644 × 23\n   order_id order_line order_date          customer_id product_id quantity model\n      &lt;dbl&gt;      &lt;dbl&gt; &lt;dttm&gt;                    &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;\n 1        1          1 2015-01-07 00:00:00           2       2681        1 Spec…\n 2        1          2 2015-01-07 00:00:00           2       2411        1 Ulti…\n 3        2          1 2015-01-10 00:00:00          10       2629        1 Neur…\n 4        2          2 2015-01-10 00:00:00          10       2137        1 Spee…\n 5        3          1 2015-01-10 00:00:00           6       2367        1 Stit…\n 6        3          2 2015-01-10 00:00:00           6       1973        1 Road…\n 7        3          3 2015-01-10 00:00:00           6       2422        1 Spee…\n 8        3          4 2015-01-10 00:00:00           6       2655        1 Infl…\n 9        3          5 2015-01-10 00:00:00           6       2247        1 Torq…\n10        4          1 2015-01-11 00:00:00          22       2408        1 Ulti…\n# ℹ 15,634 more rows\n# ℹ 16 more variables: year &lt;dbl&gt;, frame_material &lt;chr&gt;, weight &lt;dbl&gt;,\n#   price_euro &lt;dbl&gt;, category_1 &lt;chr&gt;, category_2 &lt;chr&gt;, category_3 &lt;chr&gt;,\n#   gender &lt;chr&gt;, description &lt;chr&gt;, url &lt;chr&gt;, name &lt;chr&gt;, city &lt;chr&gt;,\n#   state &lt;chr&gt;, lat &lt;dbl&gt;, lng &lt;dbl&gt;, total_price &lt;dbl&gt;"
+  },
+  {
+    "objectID": "Task1.html#quarterly-sales-trends",
+    "href": "Task1.html#quarterly-sales-trends",
+    "title": "Sales",
+    "section": "Quarterly Sales Trends",
+    "text": "Quarterly Sales Trends"
+  },
+  {
+    "objectID": "Task1.html#monthly-sales-trends",
+    "href": "Task1.html#monthly-sales-trends",
+    "title": "Sales",
+    "section": "Monthly Sales Trends",
+    "text": "Monthly Sales Trends"
+  },
+  {
+    "objectID": "Task1.html#weekly-sales-trends",
+    "href": "Task1.html#weekly-sales-trends",
+    "title": "Sales",
+    "section": "Weekly Sales Trends",
+    "text": "Weekly Sales Trends"
+  },
+  {
+    "objectID": "Task1.html#road",
+    "href": "Task1.html#road",
+    "title": "Sales",
+    "section": "Road",
+    "text": "Road\n\nQuarterly\n\n\nMonthly\n\n\nWeekly"
+  },
+  {
+    "objectID": "Task1.html#mountain",
+    "href": "Task1.html#mountain",
+    "title": "Sales",
+    "section": "Mountain",
+    "text": "Mountain\n\nQuarterly\n\n\nMonthly\n\n\nWeekly"
   }
 ]
