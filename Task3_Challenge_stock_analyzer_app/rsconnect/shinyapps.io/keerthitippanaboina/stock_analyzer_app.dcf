@@ -1,0 +1,12 @@
+name: stock_analyzer_app
+title: stock_analyzer_app
+username: keerthitippanaboina
+account: keerthitippanaboina
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 9477584
+bundleId: 7473961
+url: https://keerthitippanaboina.shinyapps.io/stock_analyzer_app/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

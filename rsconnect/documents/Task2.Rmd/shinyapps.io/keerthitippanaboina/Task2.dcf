@@ -1,0 +1,12 @@
+name: Task2
+title: Task2
+username: keerthitippanaboina
+account: keerthitippanaboina
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 9477314
+bundleId: 7473802
+url: https://keerthitippanaboina.shinyapps.io/Task2/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

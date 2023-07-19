@@ -1,0 +1,11 @@
+
+# LIBRARIES ----
+library(tidyverse)
+library(fs)
+library(glue)
+library(dplyr)
+library(rvest)
+library(quantmod)
+
+library(plotly)
+
