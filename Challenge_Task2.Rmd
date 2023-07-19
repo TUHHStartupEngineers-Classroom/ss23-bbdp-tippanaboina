@@ -1,0 +1,209 @@
+---
+title: "Sales"
+author: "Keerthi Tippanaboina"
+date: "19/07/2023"
+output: 
+  flexdashboard::flex_dashboard:
+      orientation: columns
+      vertical_layout: fill
+runtime: shiny
+---
+```{r setup}
+library(tidyverse)
+library(flexdashboard)
+library(lubridate)
+library(shiny)
+library(ggplot2)
+library(raster)
+library(sf)
+library(shinyWidgets)
+library(DT)
+library(plotly)
+
+```
+
+``` {r}
+#function for currency formatting:
+format_to_euro <-
+function(x, suffix = " €") {
+  
+  scales::dollar(x,
+                 suffix       = suffix,
+                 prefix       = "",
+                 big.mark     = ".",
+                 decimal.mark = ",")
+}
+euro_format <-
+function(scale        = 1,
+                        prefix       = "",
+                        suffix       = " €",
+                        big.mark     = ".",
+                        decimal.mark = ",") {
+  
+  scales::dollar_format(suffix       = suffix,
+                        prefix       = prefix,
+                        big.mark     = big.mark,
+                        decimal.mark = decimal.mark,
+                        scale        = scale)
+  
+}
+
+```
+
+
+```{r}
+
+# Bike data
+bikes_tbl      <- readRDS("bikes_tbl.rds")
+bikeshops_tbl  <- readRDS("bikeshops_tbl.rds")
+orderlines_tbl <- readRDS("orderlines_tbl.rds")
+
+bike_orderlines_tbl <- orderlines_tbl %>%
+    left_join(bikes_tbl,     by = c("product_id" = "bike_id")) %>%
+    left_join(bikeshops_tbl, by = c("customer_id" = "bikeshop_id")) %>%
+    mutate(total_price = price_euro * quantity)
+
+# German spatial data
+germany_sp <- getData('GADM', country='DE', level=1) 
+# Convert SpatialPolygonsDataFrame to an sf dataframe
+germany_sf <- st_as_sf(germany_sp) %>% 
+                  # Add english names
+                  mutate(VARNAME_1 = ifelse(is.na(VARNAME_1), NAME_1, VARNAME_1)) 
+
+
+```
+
+
+Sidebar {.sidebar}
+-------------------------
+
+### Date Input
+
+```{r}
+sliderInput(inputId = "date_range", 
+               label   = h4("Date Range"), 
+               min     = as_date("2015-07-01", tz = NULL), 
+               max     = as_date("2023-07-01", tz = NULL),
+               value = c(as_date("2016-01-01", tz = NULL),as_date("2017-01-01", tz = NULL)),
+               step = 1,
+               round = T,
+               pre = "")
+```
+
+
+### Bike Inputs
+
+```{r}
+checkboxGroupInput(inputId = "checkbox_group_cat1", 
+                   label   = h4("Bike Type"), 
+                   choices = c("E-Bikes" = "E-Bikes",
+                               "Mountain" = "Mountain",
+                               "Hybrid/City" = "Hybrid/City",
+                               "Gravel" = "Gravel",
+                               "Road" = "Road"),
+                   selected = c("E-Bikes"))
+```
+
+```{r}
+checkboxGroupInput(inputId = "checkbox_group_cat2", 
+                   label   = h4("Bike Family"), 
+                   choices = c("Adventure" = "Adventure",
+                               "All-Road" = "All-Road",
+                               "City" = "City",
+                               "Cross-Country" = "Cross-Country",
+                               "Cyclocross" = "Cyclocross",
+                               "Dirt Jump" = "Dirt Jump",
+                               "Downhill" = "Downhill",
+                               "E-City" = "E-City",
+                               "E-Fitness" = "E-Fitness",
+                               "E-Gravel" = "E-Gravel",
+                               "E-Mountain" = "E-Mountain",
+                               "E-Road" = "E-Road",
+                               "E-Trekking" = "E-Trekking",
+                               "Endurance" = "Endurance",
+                               "Enduro" = "Enduro",
+                               "Fat Bikes" = "Fat Bikes",
+                               "Race" = "Race",
+                               "Touring" = "Touring",
+                               "Trail" = "Trail",
+                               "Triathlon Bike" = "Triathlon Bike"))
+
+```
+
+
+Column {data-width=400}
+-----------------------
+
+```{r}
+# Reactive Filter
+bike_orderlines_filtered <- reactive({
+  bike_orderlines_tbl %>%
+    filter(category_1 %in% input$checkbox_group_cat1,
+           category_2 %in% input$checkbox_group_cat2,
+           order_date >= ymd(input$date_range[1]) & order_date <= ymd(input$date_range[2]))
+})
+
+filtered_data <- reactive({
+  bike_orderlines_filtered() %>%
+    group_by(state) %>%
+    summarise(total_revenue = sum(total_price)) %>%
+    ungroup() %>%
+    right_join(germany_sf, by = c("state" = "VARNAME_1")) %>% 
+    mutate(total_revenue = ifelse(is.na(total_revenue), 0, total_revenue)) %>% 
+    mutate(label_text = str_glue("State: {state}
+                                         Revenue: {format_to_euro(total_revenue)}")) %>%
+    st_as_sf()
+})
+
+DT::renderDataTable(expr = {
+  datatable(filtered_data(), options = list(scrollY = "250px"))
+})
+
+# Bike Family update based on Bike Type selection
+observeEvent(input$checkbox_group_cat1, {
+  selected_bike_type <- input$checkbox_group_cat1
+  available_bike_families <- unique(bikes_tbl$category_2[bikes_tbl$category_1 %in% selected_bike_type])
+  updateCheckboxGroupInput(session, "checkbox_group_cat2", choices = available_bike_families, selected = available_bike_families)
+})
+
+output$time_series_plot <- renderPlotly({
+  filtered_bike_orderlines <- bike_orderlines_filtered()
+  
+  revenue_over_time <- filtered_bike_orderlines %>%
+    mutate(month = floor_date(order_date, "month")) %>%
+    group_by(month) %>%
+    summarise(total_revenue = sum(total_price))
+  
+  plot_ly(data = revenue_over_time, 
+          x = ~month, 
+          y = ~total_revenue, 
+          type = "scatter", 
+          mode = "lines", 
+          line = list(color = "blue")) %>%
+    layout(xaxis = list(title = "Month"),
+           yaxis = list(title = "Total Revenue"),
+           showlegend = FALSE)
+})
+
+
+plotlyOutput("time_series_plot")
+```
+
+Column {data-width=600}
+-----------------------
+
+```{r}
+output$dt_output_2 <- renderPlotly({
+  plot_ly(data = filtered_data(), 
+          split      = ~NAME_1, 
+          color      = ~total_revenue,
+          colors     = "Blues",
+          stroke     = I("black"),
+          hoverinfo  = 'text', 
+          text       = ~label_text, 
+          hoveron    = "fills", 
+          showlegend = FALSE)
+})
+
+plotlyOutput("dt_output_2")
+```
