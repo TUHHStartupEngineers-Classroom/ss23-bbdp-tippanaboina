@@ -1,7 +1,7 @@
 ---
 title: "Reporting with RMarkdown"
-author: "Joschka Schwarz"
-date: "9/15/2020"
+author: "Keerthi Tippanaboina"
+date: "18/07/2023"
 output:
   pdf_document:
     toc: yes
